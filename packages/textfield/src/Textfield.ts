@@ -150,7 +150,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         selectionEnd: number,
         selectionDirection: 'forward' | 'backward' | 'none' = 'none'
     ): void {
-        this.focusElement.setSelectionRange(
+        this.inputElement?.setSelectionRange(
             selectionStart,
             selectionEnd,
             selectionDirection
@@ -161,7 +161,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
      * Selects all the text.
      */
     public select(): void {
-        this.focusElement.select();
+        this.inputElement?.select();
     }
 
     protected handleInput = (): void => {
