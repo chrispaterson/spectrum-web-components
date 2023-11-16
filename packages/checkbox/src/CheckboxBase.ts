@@ -63,7 +63,9 @@ export class CheckboxBase extends Focusable {
 
     protected override updated(changes: PropertyValues<this>): void {
         super.updated(changes);
-        this.inputElement?.addEventListener('change', this.handleChange);
+        if (this.isConnected) {
+            this.inputElement?.addEventListener('change', this.handleChange);
+        }
     }
 
     public override disconnectedCallback(): void {
