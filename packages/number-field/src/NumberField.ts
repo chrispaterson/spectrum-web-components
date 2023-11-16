@@ -138,9 +138,13 @@ export class NumberField extends TextfieldBase {
     }
 
     private get inputValue(): string {
-        return this.indeterminate
-            ? this.formattedValue
-            : this.focusElement.value;
+        if (this.indeterminate) {
+            return this.formattedValue;
+        }
+        if (this.inputElement) {
+            return this.inputElement.value;
+        }
+        return '';
     }
 
     public override _value = NaN;
@@ -166,7 +170,7 @@ export class NumberField extends TextfieldBase {
     }
 
     private convertValueToNumber(value: string): number {
-        if (isIPhone() && this.focusElement.inputMode === 'decimal') {
+        if (isIPhone() && this.inputElement?.inputMode === 'decimal') {
             const parts = this.numberFormatter.formatToParts(1000.1);
             const sourceDecimal = value
                 .split('')
@@ -373,15 +377,18 @@ export class NumberField extends TextfieldBase {
     };
 
     protected override handleInput = (): void => {
+        if (!this.inputElement) {
+            return;
+        }
         if (this.indeterminate) {
             this.wasIndeterminate = true;
             this.indeterminateValue = this.value;
-            this.focusElement.value = this.focusElement.value.replace(
+            this.inputElement.value = this.inputElement.value.replace(
                 indeterminatePlaceholder,
                 ''
             );
         }
-        const { value: originalValue, selectionStart } = this.focusElement;
+        const { value: originalValue, selectionStart } = this.inputElement;
         const value = originalValue
             .split('')
             .map((char) => remapMultiByteCharacters[char] || char)
@@ -396,7 +403,7 @@ export class NumberField extends TextfieldBase {
                 this._value = this.validateInput(valueAsNumber);
             }
             this._trackingValue = value;
-            this.focusElement.value = value;
+            this.inputElement.value = value;
             return;
         }
         const currentLength = value.length;
@@ -404,10 +411,10 @@ export class NumberField extends TextfieldBase {
         const nextSelectStart =
             (selectionStart || currentLength) -
             (currentLength - previousLength);
-        this.focusElement.value = this.indeterminate
+        this.inputElement.value = this.indeterminate
             ? indeterminatePlaceholder
             : this._trackingValue;
-        this.focusElement.setSelectionRange(nextSelectStart, nextSelectStart);
+        this.inputElement.setSelectionRange(nextSelectStart, nextSelectStart);
     };
 
     private validateInput(value: number): number {
@@ -620,6 +627,9 @@ export class NumberField extends TextfieldBase {
 
     protected override updated(changes: PropertyValues<this>): void {
         super.updated(changes);
+        if (!this.inputElement) {
+            return;
+        }
         if (changes.has('min') || changes.has('formatOptions')) {
             let inputMode = 'numeric';
             const hasNegative = typeof this.min !== 'undefined' && this.min < 0;

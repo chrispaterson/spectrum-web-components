@@ -116,20 +116,23 @@ export class Checkbox extends SizedMixin(CheckboxBase) {
         `;
     }
 
-    protected override updated(changes: PropertyValues): void {
+    protected override updated(changes: PropertyValues<this>): void {
         super.updated(changes);
+        if (!this.inputElement) {
+            return;
+        }
         if (changes.has('invalid')) {
             if (this.invalid) {
-                this.focusElement.setAttribute('aria-invalid', 'true');
+                this.inputElement.setAttribute('aria-invalid', 'true');
             } else {
-                this.focusElement.removeAttribute('aria-invalid');
+                this.inputElement.removeAttribute('aria-invalid');
             }
         }
         if (changes.has('indeterminate')) {
             if (this.indeterminate) {
-                this.focusElement.setAttribute('aria-checked', 'mixed');
+                this.inputElement.setAttribute('aria-checked', 'mixed');
             } else {
-                this.focusElement.removeAttribute('aria-checked');
+                this.inputElement.removeAttribute('aria-checked');
             }
         }
     }

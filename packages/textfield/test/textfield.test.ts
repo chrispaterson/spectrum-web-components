@@ -757,7 +757,9 @@ describe('Textfield', () => {
         await elementUpdated(el);
         expect(el.value).to.equal('');
 
-        const inputElement = el.focusElement;
+        const inputElement = el.focusElement as HTMLInputElement;
+
+        expect(inputElement).to.exist;
 
         el.focusElement.value = 'asdf';
         inputElement.dispatchEvent(new InputEvent('input'));

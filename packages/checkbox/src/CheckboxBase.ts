@@ -10,7 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import { html, TemplateResult } from '@spectrum-web-components/base';
+import {
+    html,
+    PropertyValues,
+    TemplateResult,
+} from '@spectrum-web-components/base';
 import {
     property,
     query,
@@ -57,10 +61,9 @@ export class CheckboxBase extends Focusable {
         }
     };
 
-    public override connectedCallback(): void {
-        this.updateComplete.then((): void => {
-            this.inputElement?.addEventListener('change', this.handleChange);
-        });
+    protected override updated(changes: PropertyValues<this>): void {
+        super.updated(changes);
+        this.inputElement?.addEventListener('change', this.handleChange);
     }
 
     public override disconnectedCallback(): void {
@@ -76,7 +79,6 @@ export class CheckboxBase extends Focusable {
                 aria-labelledby="label"
                 type="checkbox"
                 .checked=${this.checked}
-                @change=${this.handleChange}
             />
         `;
     }

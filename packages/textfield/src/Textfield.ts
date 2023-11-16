@@ -37,6 +37,10 @@ import checkmarkStyles from '@spectrum-web-components/icon/src/spectrum-icon-che
 
 const textfieldTypes = ['text', 'url', 'tel', 'email', 'password'] as const;
 export type TextfieldType = typeof textfieldTypes[number];
+export type TextfieldFocasableElement =
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | TextfieldBase;
 
 /**
  * @fires input - The value of the element has changed.
@@ -127,8 +131,8 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         | HTMLInputElement['autocomplete']
         | HTMLTextAreaElement['autocomplete'];
 
-    public override get focusElement(): HTMLInputElement | HTMLTextAreaElement {
-        return this.inputElement ?? document.createElement('input');
+    public override get focusElement(): TextfieldFocasableElement {
+        return this.inputElement ?? this;
     }
 
     /**
@@ -161,21 +165,24 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
     }
 
     protected handleInput = (): void => {
-        if (this.allowedKeys && this.focusElement.value) {
+        if (!this.inputElement) {
+            return;
+        }
+        if (this.allowedKeys && this.inputElement.value) {
             const regExp = new RegExp(`^[${this.allowedKeys}]*$`, 'u');
-            if (!regExp.test(this.focusElement.value)) {
-                const selectionStart = this.focusElement
+            if (!regExp.test(this.inputElement.value)) {
+                const selectionStart = this.inputElement
                     .selectionStart as number;
                 const nextSelectStart = selectionStart - 1;
-                this.focusElement.value = this.value.toString();
-                this.focusElement.setSelectionRange(
+                this.inputElement.value = this.value.toString();
+                this.inputElement.setSelectionRange(
                     nextSelectStart,
                     nextSelectStart
                 );
                 return;
             }
         }
-        this.value = this.focusElement.value;
+        this.value = this.inputElement.value;
     };
 
     protected handleChange = (): void => {
@@ -317,7 +324,10 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
     }
 
     public checkValidity(): boolean {
-        let validity = this.focusElement.checkValidity();
+        if (!this.inputElement) {
+            return true;
+        }
+        let validity = this.inputElement.checkValidity();
         if (this.required || (this.value && this.pattern)) {
             if ((this.disabled || this.multiline) && this.pattern) {
                 const regex = new RegExp(`^${this.pattern}$`, 'u');

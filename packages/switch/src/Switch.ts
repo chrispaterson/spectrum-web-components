@@ -50,12 +50,15 @@ export class Switch extends SizedMixin(CheckboxBase) {
 
     protected override firstUpdated(changes: PropertyValues): void {
         super.firstUpdated(changes);
-        this.focusElement.setAttribute('role', 'switch');
+        if (this.inputElement === undefined) {
+            return;
+        }
+        this.inputElement.setAttribute('role', 'switch');
     }
 
     protected override updated(changes: PropertyValues): void {
-        if (changes.has('checked')) {
-            this.focusElement.setAttribute(
+        if (changes.has('checked') && this.inputElement !== undefined) {
+            this.inputElement.setAttribute(
                 'aria-checked',
                 this.checked ? 'true' : 'false'
             );
