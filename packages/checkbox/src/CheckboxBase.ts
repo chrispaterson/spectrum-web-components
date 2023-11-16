@@ -25,13 +25,19 @@ export class CheckboxBase extends Focusable {
     public readonly = false;
 
     @query('#input')
-    protected inputElement!: HTMLInputElement;
+    protected inputElement?: HTMLInputElement;
 
     public override get focusElement(): HTMLElement {
-        return this.inputElement;
+        if (this.inputElement) {
+            return this.inputElement;
+        }
+        return document.createElement('input');
     }
 
-    public handleChange(): void {
+    public handleChange = (): void => {
+        if (!this.inputElement) {
+            return;
+        }
         if (this.readonly) {
             this.inputElement.checked = this.checked;
             return;
@@ -49,6 +55,18 @@ export class CheckboxBase extends Focusable {
             this.checked = !this.inputElement.checked;
             this.inputElement.checked = this.checked;
         }
+    };
+
+    public override connectedCallback(): void {
+        this.updateComplete.then((): void => {
+            this.inputElement?.addEventListener('change', this.handleChange);
+        });
+    }
+
+    public override disconnectedCallback(): void {
+        this.inputElement?.removeEventListener('change', this.handleChange);
+        this.inputElement?.parentElement?.removeChild(this.inputElement);
+        super.disconnectedCallback();
     }
 
     protected override render(): TemplateResult {

@@ -128,7 +128,7 @@ export class Search extends Textfield {
 
     public override firstUpdated(changedProperties: PropertyValues): void {
         super.firstUpdated(changedProperties);
-        this.inputElement.setAttribute('type', 'search');
+        this.focusElement.setAttribute('type', 'search');
     }
 
     public override willUpdate(): void {

@@ -54,7 +54,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
     public focused = false;
 
     @query('.input')
-    protected inputElement!: HTMLInputElement | HTMLTextAreaElement;
+    protected inputElement?: HTMLInputElement | HTMLTextAreaElement;
 
     @property({ type: Boolean, reflect: true })
     public invalid = false;
@@ -128,7 +128,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         | HTMLTextAreaElement['autocomplete'];
 
     public override get focusElement(): HTMLInputElement | HTMLTextAreaElement {
-        return this.inputElement;
+        return this.inputElement ?? document.createElement('input');
     }
 
     /**
@@ -146,7 +146,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         selectionEnd: number,
         selectionDirection: 'forward' | 'backward' | 'none' = 'none'
     ): void {
-        this.inputElement.setSelectionRange(
+        this.focusElement.setSelectionRange(
             selectionStart,
             selectionEnd,
             selectionDirection
@@ -157,43 +157,43 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
      * Selects all the text.
      */
     public select(): void {
-        this.inputElement.select();
+        this.focusElement.select();
     }
 
-    protected handleInput(): void {
-        if (this.allowedKeys && this.inputElement.value) {
+    protected handleInput = (): void => {
+        if (this.allowedKeys && this.focusElement.value) {
             const regExp = new RegExp(`^[${this.allowedKeys}]*$`, 'u');
-            if (!regExp.test(this.inputElement.value)) {
-                const selectionStart = this.inputElement
+            if (!regExp.test(this.focusElement.value)) {
+                const selectionStart = this.focusElement
                     .selectionStart as number;
                 const nextSelectStart = selectionStart - 1;
-                this.inputElement.value = this.value.toString();
-                this.inputElement.setSelectionRange(
+                this.focusElement.value = this.value.toString();
+                this.focusElement.setSelectionRange(
                     nextSelectStart,
                     nextSelectStart
                 );
                 return;
             }
         }
-        this.value = this.inputElement.value;
-    }
+        this.value = this.focusElement.value;
+    };
 
-    protected handleChange(): void {
+    protected handleChange = (): void => {
         this.dispatchEvent(
             new Event('change', {
                 bubbles: true,
                 composed: true,
             })
         );
-    }
+    };
 
-    protected onFocus(): void {
+    protected onFocus = (): void => {
         this.focused = !this.readonly && true;
-    }
+    };
 
-    protected onBlur(): void {
+    protected onBlur = (): void => {
         this.focused = !this.readonly && false;
-    }
+    };
 
     protected renderStateIcons(): TemplateResult | typeof nothing {
         if (this.invalid) {
@@ -237,10 +237,6 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
                 pattern=${ifDefined(this.pattern)}
                 placeholder=${this.placeholder}
                 .value=${this.displayValue}
-                @change=${this.handleChange}
-                @input=${this.handleInput}
-                @focus=${this.onFocus}
-                @blur=${this.onBlur}
                 ?disabled=${this.disabled}
                 ?required=${this.required}
                 ?readonly=${this.readonly}
@@ -267,10 +263,6 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
                 pattern=${ifDefined(this.pattern)}
                 placeholder=${this.placeholder}
                 .value=${live(this.displayValue)}
-                @change=${this.handleChange}
-                @input=${this.handleInput}
-                @focus=${this.onFocus}
-                @blur=${this.onBlur}
                 ?disabled=${this.disabled}
                 ?required=${this.required}
                 ?readonly=${this.readonly}
@@ -305,8 +297,27 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         super.update(changedProperties);
     }
 
+    protected override updated(changes: PropertyValues<this>): void {
+        if (this.isConnected) {
+            this.inputElement?.addEventListener('change', this.handleChange);
+            this.inputElement?.addEventListener('input', this.handleInput);
+            this.inputElement?.addEventListener('focus', this.onFocus);
+            this.inputElement?.addEventListener('blur', this.onBlur);
+        }
+        super.updated(changes);
+    }
+
+    public override disconnectedCallback(): void {
+        this.inputElement?.removeEventListener('change', this.handleChange);
+        this.inputElement?.removeEventListener('input', this.handleInput);
+        this.inputElement?.removeEventListener('focus', this.onFocus);
+        this.inputElement?.removeEventListener('blur', this.onBlur);
+        this.inputElement?.parentElement?.removeChild(this.inputElement);
+        super.disconnectedCallback();
+    }
+
     public checkValidity(): boolean {
-        let validity = this.inputElement.checkValidity();
+        let validity = this.focusElement.checkValidity();
         if (this.required || (this.value && this.pattern)) {
             if ((this.disabled || this.multiline) && this.pattern) {
                 const regex = new RegExp(`^${this.pattern}$`, 'u');
