@@ -138,13 +138,9 @@ export class NumberField extends TextfieldBase {
     }
 
     private get inputValue(): string {
-        if (this.indeterminate) {
-            return this.formattedValue;
-        }
-        if (this.inputElement) {
-            return this.inputElement.value;
-        }
-        return '';
+        return this.indeterminate
+            ? this.formattedValue
+            : this.inputElement.value;
     }
 
     public override _value = NaN;
@@ -170,7 +166,7 @@ export class NumberField extends TextfieldBase {
     }
 
     private convertValueToNumber(value: string): number {
-        if (isIPhone() && this.inputElement?.inputMode === 'decimal') {
+        if (isIPhone() && this.inputElement.inputMode === 'decimal') {
             const parts = this.numberFormatter.formatToParts(1000.1);
             const sourceDecimal = value
                 .split('')
@@ -336,18 +332,18 @@ export class NumberField extends TextfieldBase {
         this.managedInput = false;
     }
 
-    protected override onFocus = (): void => {
+    protected override onFocus(): void {
         super.onFocus();
         this._trackingValue = this.inputValue;
         this.keyboardFocused = !this.readonly && true;
         this.addEventListener('wheel', this.onScroll, { passive: false });
-    };
+    }
 
-    protected override onBlur = (): void => {
+    protected override onBlur(): void {
         super.onBlur();
         this.keyboardFocused = !this.readonly && false;
         this.removeEventListener('wheel', this.onScroll);
-    };
+    }
 
     private handleFocusin(): void {
         this.focused = !this.readonly && true;
@@ -362,7 +358,7 @@ export class NumberField extends TextfieldBase {
     private wasIndeterminate = false;
     private indeterminateValue?: number;
 
-    protected override handleChange = (): void => {
+    protected override handleChange(): void {
         const value = this.convertValueToNumber(this.inputValue);
         if (this.wasIndeterminate) {
             this.wasIndeterminate = false;
@@ -374,12 +370,9 @@ export class NumberField extends TextfieldBase {
         }
         this.value = value;
         super.handleChange();
-    };
+    }
 
-    protected override handleInput = (): void => {
-        if (!this.inputElement) {
-            return;
-        }
+    protected override handleInput(): void {
         if (this.indeterminate) {
             this.wasIndeterminate = true;
             this.indeterminateValue = this.value;
@@ -415,7 +408,7 @@ export class NumberField extends TextfieldBase {
             ? indeterminatePlaceholder
             : this._trackingValue;
         this.inputElement.setSelectionRange(nextSelectStart, nextSelectStart);
-    };
+    }
 
     private validateInput(value: number): number {
         if (typeof this.min !== 'undefined') {
@@ -626,10 +619,6 @@ export class NumberField extends TextfieldBase {
     }
 
     protected override updated(changes: PropertyValues<this>): void {
-        super.updated(changes);
-        if (!this.inputElement) {
-            return;
-        }
         if (changes.has('min') || changes.has('formatOptions')) {
             let inputMode = 'numeric';
             const hasNegative = typeof this.min !== 'undefined' && this.min < 0;
@@ -655,7 +644,7 @@ export class NumberField extends TextfieldBase {
                     inputMode = 'decimal';
                 }
             }
-            this.focusElement.inputMode = inputMode;
+            this.inputElement.inputMode = inputMode;
         }
     }
 }

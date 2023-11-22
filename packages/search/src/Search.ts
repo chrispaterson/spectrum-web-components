@@ -80,7 +80,7 @@ export class Search extends Textfield {
     public async reset(): Promise<void> {
         this.value = '';
         await this.updateComplete;
-        this.inputElement?.dispatchEvent(
+        this.focusElement.dispatchEvent(
             new InputEvent('input', {
                 bubbles: true,
                 composed: true,
@@ -90,7 +90,7 @@ export class Search extends Textfield {
         // so this synthetic replication of a `change` event must not be
         // either as the `Textfield` baseclass should only need to handle
         // the native variant of this interaction.
-        this.inputElement?.dispatchEvent(
+        this.focusElement.dispatchEvent(
             new InputEvent('change', {
                 bubbles: true,
             })
@@ -128,7 +128,7 @@ export class Search extends Textfield {
 
     public override firstUpdated(changedProperties: PropertyValues): void {
         super.firstUpdated(changedProperties);
-        this.inputElement?.setAttribute('type', 'search');
+        this.inputElement.setAttribute('type', 'search');
     }
 
     public override willUpdate(): void {

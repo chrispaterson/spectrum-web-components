@@ -37,10 +37,6 @@ import checkmarkStyles from '@spectrum-web-components/icon/src/spectrum-icon-che
 
 const textfieldTypes = ['text', 'url', 'tel', 'email', 'password'] as const;
 export type TextfieldType = typeof textfieldTypes[number];
-export type TextfieldFocasableElement =
-    | HTMLInputElement
-    | HTMLTextAreaElement
-    | TextfieldBase;
 
 /**
  * @fires input - The value of the element has changed.
@@ -58,7 +54,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
     public focused = false;
 
     @query('.input')
-    protected inputElement?: HTMLInputElement | HTMLTextAreaElement;
+    protected inputElement!: HTMLInputElement | HTMLTextAreaElement;
 
     @property({ type: Boolean, reflect: true })
     public invalid = false;
@@ -131,8 +127,8 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         | HTMLInputElement['autocomplete']
         | HTMLTextAreaElement['autocomplete'];
 
-    public override get focusElement(): TextfieldFocasableElement {
-        return this.inputElement ?? this;
+    public override get focusElement(): HTMLInputElement | HTMLTextAreaElement {
+        return this.inputElement;
     }
 
     /**
@@ -150,7 +146,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         selectionEnd: number,
         selectionDirection: 'forward' | 'backward' | 'none' = 'none'
     ): void {
-        this.inputElement?.setSelectionRange(
+        this.inputElement.setSelectionRange(
             selectionStart,
             selectionEnd,
             selectionDirection
@@ -161,13 +157,10 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
      * Selects all the text.
      */
     public select(): void {
-        this.inputElement?.select();
+        this.inputElement.select();
     }
 
-    protected handleInput = (): void => {
-        if (!this.inputElement) {
-            return;
-        }
+    protected handleInput(): void {
         if (this.allowedKeys && this.inputElement.value) {
             const regExp = new RegExp(`^[${this.allowedKeys}]*$`, 'u');
             if (!regExp.test(this.inputElement.value)) {
@@ -183,24 +176,24 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
             }
         }
         this.value = this.inputElement.value;
-    };
+    }
 
-    protected handleChange = (): void => {
+    protected handleChange(): void {
         this.dispatchEvent(
             new Event('change', {
                 bubbles: true,
                 composed: true,
             })
         );
-    };
+    }
 
-    protected onFocus = (): void => {
+    protected onFocus(): void {
         this.focused = !this.readonly && true;
-    };
+    }
 
-    protected onBlur = (): void => {
+    protected onBlur(): void {
         this.focused = !this.readonly && false;
-    };
+    }
 
     protected renderStateIcons(): TemplateResult | typeof nothing {
         if (this.invalid) {
@@ -244,6 +237,10 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
                 pattern=${ifDefined(this.pattern)}
                 placeholder=${this.placeholder}
                 .value=${this.displayValue}
+                @change=${this.handleChange}
+                @input=${this.handleInput}
+                @focus=${this.onFocus}
+                @blur=${this.onBlur}
                 ?disabled=${this.disabled}
                 ?required=${this.required}
                 ?readonly=${this.readonly}
@@ -270,6 +267,10 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
                 pattern=${ifDefined(this.pattern)}
                 placeholder=${this.placeholder}
                 .value=${live(this.displayValue)}
+                @change=${this.handleChange}
+                @input=${this.handleInput}
+                @focus=${this.onFocus}
+                @blur=${this.onBlur}
                 ?disabled=${this.disabled}
                 ?required=${this.required}
                 ?readonly=${this.readonly}
@@ -279,6 +280,11 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
     }
 
     protected renderField(): TemplateResult {
+        if (!this.isConnected) {
+            return html`
+                ${this.renderStateIcons()}
+            `;
+        }
         return html`
             ${this.renderStateIcons()}
             ${this.multiline ? this.renderMultiline : this.renderInput}
@@ -304,29 +310,12 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         super.update(changedProperties);
     }
 
-    protected override updated(changes: PropertyValues<this>): void {
-        if (this.isConnected) {
-            this.inputElement?.addEventListener('change', this.handleChange);
-            this.inputElement?.addEventListener('input', this.handleInput);
-            this.inputElement?.addEventListener('focus', this.onFocus);
-            this.inputElement?.addEventListener('blur', this.onBlur);
-        }
-        super.updated(changes);
-    }
-
     public override disconnectedCallback(): void {
-        this.inputElement?.removeEventListener('change', this.handleChange);
-        this.inputElement?.removeEventListener('input', this.handleInput);
-        this.inputElement?.removeEventListener('focus', this.onFocus);
-        this.inputElement?.removeEventListener('blur', this.onBlur);
-        this.inputElement?.parentElement?.removeChild(this.inputElement);
+        this.requestUpdate();
         super.disconnectedCallback();
     }
 
     public checkValidity(): boolean {
-        if (!this.inputElement) {
-            return true;
-        }
         let validity = this.inputElement.checkValidity();
         if (this.required || (this.value && this.pattern)) {
             if ((this.disabled || this.multiline) && this.pattern) {

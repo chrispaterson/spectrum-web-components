@@ -10,11 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import {
-    html,
-    PropertyValues,
-    TemplateResult,
-} from '@spectrum-web-components/base';
+import { html, TemplateResult } from '@spectrum-web-components/base';
 import {
     property,
     query,
@@ -29,19 +25,13 @@ export class CheckboxBase extends Focusable {
     public readonly = false;
 
     @query('#input')
-    protected inputElement?: HTMLInputElement;
+    protected inputElement!: HTMLInputElement;
 
     public override get focusElement(): HTMLElement {
-        if (this.inputElement) {
-            return this.inputElement;
-        }
-        return document.createElement('input');
+        return this.inputElement;
     }
 
-    public handleChange = (): void => {
-        if (!this.inputElement) {
-            return;
-        }
+    public handleChange(): void {
         if (this.readonly) {
             this.inputElement.checked = this.checked;
             return;
@@ -59,28 +49,24 @@ export class CheckboxBase extends Focusable {
             this.checked = !this.inputElement.checked;
             this.inputElement.checked = this.checked;
         }
-    };
-
-    protected override updated(changes: PropertyValues<this>): void {
-        super.updated(changes);
-        if (this.isConnected) {
-            this.inputElement?.addEventListener('change', this.handleChange);
-        }
     }
 
     public override disconnectedCallback(): void {
-        this.inputElement?.removeEventListener('change', this.handleChange);
-        this.inputElement?.parentElement?.removeChild(this.inputElement);
+        this.requestUpdate();
         super.disconnectedCallback();
     }
 
     protected override render(): TemplateResult {
+        if (!this.isConnected) {
+            return html``;
+        }
         return html`
             <input
                 id="input"
                 aria-labelledby="label"
                 type="checkbox"
                 .checked=${this.checked}
+                @change=${this.handleChange}
             />
         `;
     }

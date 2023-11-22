@@ -116,11 +116,8 @@ export class Checkbox extends SizedMixin(CheckboxBase) {
         `;
     }
 
-    protected override updated(changes: PropertyValues<this>): void {
+    protected override updated(changes: PropertyValues): void {
         super.updated(changes);
-        if (!this.inputElement) {
-            return;
-        }
         if (changes.has('invalid')) {
             if (this.invalid) {
                 this.inputElement.setAttribute('aria-invalid', 'true');
