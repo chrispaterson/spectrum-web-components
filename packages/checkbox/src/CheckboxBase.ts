@@ -28,7 +28,7 @@ export class CheckboxBase extends Focusable {
     protected inputElement!: HTMLInputElement;
 
     public override get focusElement(): HTMLElement {
-        return this.inputElement;
+        return this.inputElement ?? this;
     }
 
     public handleChange(): void {

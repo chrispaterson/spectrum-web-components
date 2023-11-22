@@ -128,7 +128,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         | HTMLTextAreaElement['autocomplete'];
 
     public override get focusElement(): HTMLInputElement | HTMLTextAreaElement {
-        return this.inputElement;
+        return this.inputElement ?? this;
     }
 
     /**
