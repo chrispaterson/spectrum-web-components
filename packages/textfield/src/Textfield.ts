@@ -316,7 +316,7 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
     }
 
     public checkValidity(): boolean {
-        let validity = this.inputElement.checkValidity();
+        let validity = this.inputElement?.checkValidity() ?? true;
         if (this.required || (this.value && this.pattern)) {
             if ((this.disabled || this.multiline) && this.pattern) {
                 const regex = new RegExp(`^${this.pattern}$`, 'u');

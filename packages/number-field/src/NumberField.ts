@@ -166,7 +166,7 @@ export class NumberField extends TextfieldBase {
     }
 
     private convertValueToNumber(value: string): number {
-        if (isIPhone() && this.inputElement.inputMode === 'decimal') {
+        if (isIPhone() && this.inputElement?.inputMode === 'decimal') {
             const parts = this.numberFormatter.formatToParts(1000.1);
             const sourceDecimal = value
                 .split('')
@@ -619,6 +619,9 @@ export class NumberField extends TextfieldBase {
     }
 
     protected override updated(changes: PropertyValues<this>): void {
+        if (!this.isConnected) {
+            return;
+        }
         if (changes.has('min') || changes.has('formatOptions')) {
             let inputMode = 'numeric';
             const hasNegative = typeof this.min !== 'undefined' && this.min < 0;
