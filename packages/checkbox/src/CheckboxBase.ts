@@ -51,6 +51,13 @@ export class CheckboxBase extends Focusable {
         }
     }
 
+    public override connectedCallback(): void {
+        if (this.hasUpdated) {
+            this.requestUpdate();
+        }
+        super.connectedCallback();
+    }
+
     public override disconnectedCallback(): void {
         this.requestUpdate();
         super.disconnectedCallback();

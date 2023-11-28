@@ -310,6 +310,13 @@ export class TextfieldBase extends ManageHelpText(Focusable) {
         super.update(changedProperties);
     }
 
+    public override connectedCallback(): void {
+        if (this.hasUpdated) {
+            this.requestUpdate();
+        }
+        super.connectedCallback();
+    }
+
     public override disconnectedCallback(): void {
         this.requestUpdate();
         super.disconnectedCallback();
