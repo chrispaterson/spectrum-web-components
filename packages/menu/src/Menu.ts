@@ -92,7 +92,7 @@ export class Menu extends SpectrumElement {
     @query('slot:not([name])')
     public menuSlot!: HTMLSlotElement;
 
-    private childItemSet = new Set<MenuItem>();
+    private childItemMap = new Map<number, WeakRef<MenuItem>>();
     public focusedItemIndex = 0;
     public focusInItemIndex = 0;
 
@@ -107,6 +107,11 @@ export class Menu extends SpectrumElement {
 
     private cachedChildItems: MenuItem[] | undefined;
 
+    private childMenuItemMapHas(menuItem: MenuItem): boolean {
+        const ref = this.childItemMap.get(menuItem.__swcMenuItemId);
+        return !!ref?.deref();
+    }
+
     private updateCachedMenuItems(): MenuItem[] {
         this.cachedChildItems = [];
 
@@ -120,7 +125,7 @@ export class Menu extends SpectrumElement {
                     : ([...slotElement.querySelectorAll(`*`)] as MenuItem[]);
 
             for (const childMenuItem of childMenuItems) {
-                if (this.childItemSet.has(childMenuItem)) {
+                if (this.childMenuItemMapHas(childMenuItem)) {
                     this.cachedChildItems.push(childMenuItem);
                 }
             }
@@ -217,12 +222,12 @@ export class Menu extends SpectrumElement {
     }
 
     private addChildItem(item: MenuItem): void {
-        this.childItemSet.add(item);
+        this.childItemMap.set(item.__swcMenuItemId, new WeakRef(item));
         this.handleItemsChanged();
     }
 
     private async removeChildItem(event: MenuItemRemovedEvent): Promise<void> {
-        this.childItemSet.delete(event.item);
+        this.childItemMap.delete(event.item.__swcMenuItemId);
         this.cachedChildItems = undefined;
         if (event.item.focused) {
             this.handleItemsChanged();
@@ -397,14 +402,18 @@ export class Menu extends SpectrumElement {
             const selected: string[] = [];
             const selectedItems: MenuItem[] = [];
 
-            this.childItemSet.forEach((childItem) => {
-                if (childItem.menuData.selectionRoot !== this) return;
-
-                if (this.selectedItemsMap.has(childItem)) {
-                    selected.push(childItem.value);
-                    selectedItems.push(childItem);
+            for (const [, ref] of this.childItemMap) {
+                const childItem = ref.deref();
+                if (childItem) {
+                    if (
+                        childItem.menuData.selectionRoot === this &&
+                        this.selectedItemsMap.has(childItem)
+                    ) {
+                        selected.push(childItem.value);
+                        selectedItems.push(childItem);
+                    }
                 }
-            });
+            }
             this.selected = selected;
             this.selectedItems = selectedItems;
             this.value = this.selected.join(this.valueSeparator);
@@ -681,9 +690,12 @@ export class Menu extends SpectrumElement {
         const updates: Promise<unknown>[] = [
             new Promise((res) => requestAnimationFrame(() => res(true))),
         ];
-        this.childItemSet.forEach((childItem) => {
-            updates.push(childItem.triggerUpdate());
-        });
+        for (const [, ref] of this.childItemMap) {
+            const childItem = ref.deref();
+            if (childItem) {
+                updates.push(childItem.triggerUpdate());
+            }
+        }
         this.childItemsUpdated = Promise.all(updates);
     }
 
@@ -693,6 +705,11 @@ export class Menu extends SpectrumElement {
             this.setAttribute('role', this.ownRole);
         }
         this.updateComplete.then(() => this.updateItemFocus());
+    }
+
+    public override disconnectedCallback(): void {
+        this.cachedChildItems = void 0;
+        super.disconnectedCallback();
     }
 
     protected childItemsUpdated!: Promise<unknown[]>;

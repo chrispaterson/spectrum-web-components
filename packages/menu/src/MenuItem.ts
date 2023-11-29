@@ -96,8 +96,26 @@ export class MenuItemAddedOrUpdatedEvent extends Event {
 
 export type MenuItemChildren = { icon: Element[]; content: Node[] };
 
-const addOrUpdateEvent = new MenuItemAddedOrUpdatedEvent();
-const removeEvent = new MenuItemRemovedEvent();
+let addOrUpdateEvent = new MenuItemAddedOrUpdatedEvent();
+let removeEvent = new MenuItemRemovedEvent();
+let addOrUpdateEventRafId = 0;
+function resetAddOrUpdateEvent(): void {
+    if (addOrUpdateEventRafId === 0) {
+        addOrUpdateEventRafId = requestAnimationFrame(() => {
+            addOrUpdateEvent = new MenuItemAddedOrUpdatedEvent();
+            addOrUpdateEventRafId = 0;
+        });
+    }
+}
+let removeEventEventtRafId = 0;
+function resetRemoveEvent(): void {
+    if (removeEventEventtRafId === 0) {
+        removeEventEventtRafId = requestAnimationFrame(() => {
+            removeEvent = new MenuItemRemovedEvent();
+            removeEventEventtRafId = 0;
+        });
+    }
+}
 
 /**
  * @element sp-menu-item
@@ -114,9 +132,12 @@ export class MenuItem extends LikeAnchor(Focusable) {
         return [menuItemStyles, checkmarkStyles, chevronStyles];
     }
 
+    static nextId = 0;
     static instanceCount = 0;
 
     private isInSubmenu = false;
+
+    public __swcMenuItemId = MenuItem.nextId++;
 
     @property({ type: Boolean, reflect: true })
     public active = false;
@@ -515,6 +536,7 @@ export class MenuItem extends LikeAnchor(Focusable) {
         }
         addOrUpdateEvent.reset(this);
         this.dispatchEvent(addOrUpdateEvent);
+        resetAddOrUpdateEvent();
         this._parentElement = this.parentElement as HTMLElement;
     }
 
@@ -522,10 +544,13 @@ export class MenuItem extends LikeAnchor(Focusable) {
 
     public override disconnectedCallback(): void {
         removeEvent.reset(this);
-        if (!this.isInSubmenu) {
-            this._parentElement?.dispatchEvent(removeEvent);
+        if (!this.isInSubmenu && this._parentElement) {
+            removeEvent.reset(this);
+            this._parentElement.dispatchEvent(removeEvent);
+            resetRemoveEvent();
         }
         this.isInSubmenu = false;
+        this._itemChildren = void 0;
         super.disconnectedCallback();
     }
 
@@ -535,6 +560,7 @@ export class MenuItem extends LikeAnchor(Focusable) {
         }
         await new Promise((ready) => requestAnimationFrame(ready));
         addOrUpdateEvent.reset(this);
+        resetAddOrUpdateEvent();
         this.dispatchEvent(addOrUpdateEvent);
     }
 
